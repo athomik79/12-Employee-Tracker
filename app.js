@@ -37,6 +37,7 @@ const db = new Database({
 });
 
 async function employeeSummary() {
+  console.log(' ');
   await db.query('SELECT e.id, e.first_name AS First_Name, e.last_name AS Last_Name, title AS Title, salary AS Salary, name AS Department, CONCAT(m.first_name, " ", m.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role r ON e.role_id = r.id INNER JOIN department d ON r.department_id = d.id', (err, res) => {
     if (err) throw err;
     console.table(res);
@@ -50,7 +51,8 @@ async function addEmployee() {
   managers.unshift({id: null, Manager: "None"});
 
   inquirer
-    .prompt([{
+    .prompt([
+    {
       name:"firstName",
       type: "input",
       message: "Enter employee's first name:"
@@ -75,8 +77,7 @@ async function addEmployee() {
     ]).then((answers) => {
       let positionDetails = positions.find(obj => obj.title === answers.role);
       let manager = managers.find(obj => obj.Manager === answers.manager);
-      db.query("INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?)",
-      [[answers.firstName, answers.lastName, positionDetails.id,manager.id]]);
+      db.query("INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?)", [[answers.firstName, answers.lastName, positionDetails.id,manager.id]]);
       console.log(`${answers.firstName} was added to the employee database`);
       runApp();
     });
@@ -104,6 +105,48 @@ async function addEmployee() {
       })
   };
 
+  async function updateManager() {
+        let employees = await db.query('Select id, CONCAT(first_name, " ", last_name) AS name FROM employee');
+        employees.push({id: null, name: "Cancel"});
+  
+    inquirer
+      .prompt([
+        {
+          name: "findEmployee",
+          type: "list",
+          message: "Select employee to update manager",
+          choices: employees.map(obj => obj.name)
+        }
+    ]).then(employeeInfo => {
+      if (employeeInfo.findEmployee == "Cancel") {
+        runApp();
+        return;
+      }
+      let managers = employees.filter(currEmployee => currEmployee.name != employeeInfo.findEmployee);
+      for (i in managers) {
+        if (managers[i].name === "Cancel") {
+          managers[i].name = "None";
+        }
+      };
+
+      inquirer
+        .prompt([
+          {
+            name: "managerName",
+            type: "list",
+            message: "Change manager to:",
+            choices: managers.map(obj => obj.name)
+          }
+        ]).then(managerInfo => {
+          let employeeID = employees.find(obj => obj.name === employeeInfo.findEmployee).id
+          let managerID = managers.find(obj => obj.name === managerInfo.managerName).id
+          db.query("UPDATE employee SET manager_id=? WHERE id=?", [managerID, employeeID]);
+          console.log(`${employeeInfo.findEmployee} now reports to ${managerInfo.managerName}`);
+          runApp();
+        })
+    })
+  };
+
 function runApp() {
   inquirer
     .prompt({
@@ -114,7 +157,7 @@ function runApp() {
         "View All Employees",
         "Add a New Employee",
         "Remove an Employee",
-        "Update Employee Info",
+        "Update Employee Manager",
         "Add a New Role",
         "Add a New Department"
       ]
@@ -129,7 +172,8 @@ function runApp() {
         case "Remove an Employee":
           removeEmployee();
           break;
-        case "Update Employee Info":
+        case "Update Employee Manager":
+          updateManager();
           break;
         case "Add a New Role":
           break;
