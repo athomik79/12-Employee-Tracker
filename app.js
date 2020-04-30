@@ -182,6 +182,21 @@ async function addEmployee() {
       })
   };
 
+  async function addDepartment() {
+    inquirer
+      .prompt([
+        {
+          name: "depName",
+          type: "input",
+          message: "Enter new department:"
+        }
+      ]).then(answers => {
+        db.query("INSERT INTO department (name) VALUES (?)", [answers.depName]);
+        console.log("\x1b[32m", `${answers.depName} was added to departments`);
+        runApp();
+      })
+  };
+
 
 function runApp() {
   inquirer
@@ -215,6 +230,7 @@ function runApp() {
           addRole();
           break;
         case "Add a New Department":
+          addDepartment();
           break;
       }
     });
