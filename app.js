@@ -147,6 +147,15 @@ async function addEmployee() {
     })
   };
 
+  async function showRoles() {
+    console.log(' ');
+    await db.query('SELECT r.id, title, salary, name AS department FROM role r LEFT JOIN department d ON department_id = d.id', (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        runApp();
+    })
+};
+
   async function addRole() {
     let departments = await db.query('Select id, name FROM department');
 
@@ -182,6 +191,63 @@ async function addEmployee() {
       })
   };
 
+  async function removeRole() {
+    let roles = await db.query('SELECT id, title FROM role');
+    roles.push({ id: null, title: "Cancel" });
+    inquirer.prompt([
+        {
+            name: "roleName",
+            type: "list",
+            message: "Remove which role?",
+            choices: roles.map(obj => obj.title)
+        }
+    ]).then(response => {
+        if (response.roleName != "Cancel") {
+            let noMoreRole = roles.find(obj => obj.title === response.roleName);
+            db.query("DELETE FROM role WHERE id=?", noMoreRole.id);
+            console.log("\x1b[32m", `${response.roleName} was removed. Please reassign associated employees.`);
+        }
+        runApp();
+    })
+};
+
+async function updateRole() {
+  let employees = await db.query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee');
+  employees.push({ id: null, name: "Cancel" });
+  let roles = await db.query('SELECT id, title FROM role');
+  inquirer.prompt([
+      {
+          name: "findEmployee",
+          type: "list",
+          message: "For which employee?",
+          choices: employees.map(obj => obj.name)
+      },
+      {
+          name: "newRole",
+          type: "list",
+          message: "Change role to:",
+          choices: roles.map(obj => obj.title)
+      }
+  ]).then(answers => {
+      if (answers.findEmployee != "Cancel") {
+          let empID = employees.find(obj => obj.name === answers.findEmployee).id
+          let roleID = roles.find(obj => obj.title === answers.newRole).id
+          db.query("UPDATE employee SET role_id=? WHERE id=?", [roleID, empID]);
+          console.log("\x1b[32m", `${answers.findEmployee} new role is ${answers.newRole}`);
+      }
+      runApp();
+  })
+};
+
+  async function viewDepartments() {
+    console.log(' ');
+    await db.query('SELECT id, name AS department FROM department', (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        runApp();
+    })
+};
+
   async function addDepartment() {
     inquirer
       .prompt([
@@ -197,6 +263,61 @@ async function addEmployee() {
       })
   };
 
+  async function removeDepartment() {
+    let departments = await db.query('SELECT id, name FROM department');
+    departments.push({ id: null, name: "Cancel" });
+    inquirer.prompt([
+        {
+            name: "depName",
+            type: "list",
+            message: "Remove which department?",
+            choices: departments.map(obj => obj.name)
+        }
+    ]).then(response => {
+        if (response.depName != "Cancel") {
+            let uselessDepartment = departments.find(obj => obj.name === response.depName);
+            db.query("DELETE FROM department WHERE id=?", uselessDepartment.id);
+            console.log("\x1b[32m", `${response.depName} was removed. Please reassign associated roles.`);
+        }
+        runApp();
+    })
+};
+
+  function editEmployee() {
+    inquirer
+      .prompt(
+        {
+          name: "editChoice",
+          type: "list",
+          message: "What would you like to update?",
+          choices: [
+            "Add a New Employee",
+            "Change Employee Role",
+            "Change Employee Manager",
+            "Remove an Employee",
+            "Return to Main Menu"
+          ]
+        }).then(response => {
+          switch (response.editChoice) {
+            case "Add a New Employee":
+              addEmployee();
+              break;
+            case "Change Employee Role":
+              updateRole();
+              break;
+            case "Change Employee Manager":
+              updateManager();
+              break;
+            case "Remove an Employee":
+              removeEmployee();
+              break;
+            case "Return to Main Menu":
+              runApp();
+              break;
+          }
+        })
+  };
+
 
 function runApp() {
   inquirer
@@ -206,31 +327,39 @@ function runApp() {
       message: "What would you like to do?",
       choices: [
         "View All Employees",
-        "Add a New Employee",
-        "Remove an Employee",
-        "Update Employee Manager",
+        "Add or Edit Employee Info",
+        "View Roles",
         "Add a New Role",
-        "Add a New Department"
+        "Remove a Role",
+        "View Departments",
+        "Add a New Department",
+        "Remove a Department"
       ]
     }).then((responses) => {
       switch (responses.employeetracker) {
         case "View All Employees":
           employeeSummary();
           break;
-        case "Add a New Employee":
-          addEmployee();
+        case "Add or Edit Employee Info":
+          editEmployee();
           break;
-        case "Remove an Employee":
-          removeEmployee();
-          break;
-        case "Update Employee Manager":
-          updateManager();
+        case "View Roles":
+          showRoles();
           break;
         case "Add a New Role":
           addRole();
           break;
+        case "Remove a Role":
+          removeRole();
+          break;
+        case "View Departments":
+          viewDepartments();
+          break;
         case "Add a New Department":
           addDepartment();
+          break;
+        case "Remove a Department":
+          removeDepartment();
           break;
       }
     });
