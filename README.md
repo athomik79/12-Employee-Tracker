@@ -12,6 +12,10 @@ athomik79
 
 Employee Tracker
 
+![Employee Tracker](https://github.com/athomik79/12-Employee-Tracker/blob/master/Employee-Tracker.png)
+
+[Link to mp4](https://drive.google.com/file/d/1NKnm7AE7xDCWNpInUfWPWj_TKq1tMTpM/view)
+
 ### Description:
 
 A solution for managing a company's employees using node, inquirer, and MySQL
