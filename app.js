@@ -1,6 +1,8 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
+const figlet = require("figlet");
+const chalk = require("chalk");
 
 class Database {
   constructor(config) {
@@ -28,6 +30,8 @@ class Database {
   }
 }
 
+console.log(chalk.blue(figlet.textSync(`Employee\nManager`)));
+
 const db = new Database({
   host: "localhost",
   port: 3306,
@@ -35,6 +39,8 @@ const db = new Database({
   password: "Cal_mel@1013",
   database: "companyDB"
 });
+
+
 
 async function employeeSummary() {
   console.log(' ');
