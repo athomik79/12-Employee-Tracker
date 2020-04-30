@@ -99,7 +99,7 @@ async function addEmployee() {
         if (response.employeeName != "Cancel") {
           let exEmployee = employees.find(obj => obj.name === response.employeeName);
           db.query("DELETE FROM employee WHERE id=?", exEmployee.id);
-          console.log(`${response.employeeName} is no longer an employee`);
+          console.log("\x1b[35m", `${response.employeeName} is no longer an employee`);
         }
         runApp();
       })
@@ -147,6 +147,42 @@ async function addEmployee() {
     })
   };
 
+  async function addRole() {
+    let departments = await db.query('Select id, name FROM department');
+
+    inquirer
+      .prompt([
+        {
+          name: "roleName",
+          type: "input",
+          message: "Enter new role:"
+        },
+        {
+          name: "salaryAmt",
+          type: "input",
+          message: "Enter the salary for this role",
+          validate: input => {
+            if(!isNaN(input)) {
+              return true;
+            }
+            return "Please enter a valid number"
+          }
+        },
+        {
+          name: "roleDepartment",
+          type: "list",
+          message: "Choose a department for this role:",
+          choices: departments.map(obj => obj.name)
+        }
+      ]).then(answers => {
+        let depID = departments.find(obj => obj.name === answers.roleDepartment).id
+        db.query("INSERT INTO role (title, salary, department_id) VALUES (?)", [[answers.roleName, answers.salaryAmt, depID]]);
+        console.log("\x1b[32m", `${answers.roleName} was added. Department: ${answers.roleDepartment}`);
+        runApp();
+      })
+  };
+
+
 function runApp() {
   inquirer
     .prompt({
@@ -176,6 +212,7 @@ function runApp() {
           updateManager();
           break;
         case "Add a New Role":
+          addRole();
           break;
         case "Add a New Department":
           break;
